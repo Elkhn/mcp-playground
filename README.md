@@ -18,14 +18,14 @@ https://medium.com/@elkhan.alizada/your-own-ai-agent-playground-build-it-with-st
 
 ## ✨ Key Features
 
-| Feature | Description |
-| ------- | ----------- |
+| Feature | Description                                                                                |
+| ------- |--------------------------------------------------------------------------------------------|
 | 🔌 **Multi-Server MCP** | Register any number of MCP servers; the agent auto-detects available tools & routes calls. |
-| 🖥️ **Streamlit Chat UI** | Rich chat experience with history, sidebar controls and live tool execution output. |
-| 🧩 **Provider-Agnostic** | One LangChain interface for OpenAI, Bedrock, Anthropic, Google. Switch on the fly. |
-| 🤖 **React Agent via LangGraph** | `create_react_agent` enables dynamic tool selection and reasoning. |
-| 🐳 **Docker-First** | Separate Dockerfiles for client & each server + a single `docker-compose.yaml`. |
-| 📦 **Extensible** | Drop-in new MCP servers or providers without touching UI code. |
+| 🖥️ **Streamlit Chat UI** | Rich chat experience with history, sidebar controls and live tool execution output.        |
+| 🧩 **Provider-Agnostic** | One LangChain interface for OpenAI, Bedrock, Anthropic, Google, Groq. Switch on the fly.   |
+| 🤖 **React Agent via LangGraph** | `create_react_agent` enables dynamic tool selection and reasoning.                         |
+| 🐳 **Docker-First** | Separate Dockerfiles for client & each server + a single `docker-compose.yaml`.            |
+| 📦 **Extensible** | Drop-in new MCP servers or providers without touching UI code.                             |
 ---
 
 ## 📂 Project Layout
@@ -76,7 +76,7 @@ All runtime settings are concentrated in **`client/config.py`** and environment 
 
 | Variable | Purpose |
 | -------- | ------- |
-| `MODEL_ID` | Provider selector (`OpenAI`, `Bedrock`, `Anthropic`, `Google`).
+| `MODEL_ID` | Provider selector (`OpenAI`, `Bedrock`, `Anthropic`, `Google`, `Groq`).
 | `TEMPERATURE` | Sampling temperature (sidebar slider). |
 | `MAX_TOKENS` | Token limit (sidebar). |
 ```python
@@ -84,7 +84,8 @@ MODEL_OPTIONS = {
     'OpenAI': 'gpt-4o',
     'Antropic': 'claude-3-5-sonnet-20240620',
     'Google': 'gemini-2.0-flash-001',
-    'Bedrock': 'us.anthropic.claude-3-7-sonnet-20250219-v1:0'
+    'Bedrock': 'us.anthropic.claude-3-7-sonnet-20250219-v1:0',
+    'Groq': 'meta-llama/llama-4-scout-17b-16e-instruct'
 }
 ```
 MCP endpoints live in **`servers_config.json`** – edit to add/remove servers without code changes.
