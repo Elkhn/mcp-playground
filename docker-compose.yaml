@@ -7,17 +7,21 @@ services:
     restart: always
     volumes:
       - ./servers/server1:/app
+      - /app/.venv
     ports:
       - "8000:8000"
-  
+    command: ["uv", "run", "python", "main.py"]
+
   mcpserver2:
     build: ./servers/server2
     container_name: mcpserver_2
     restart: always
     volumes:
       - ./servers/server2:/app
+      - /app/.venv
     ports:
       - "8001:8001"
+    command: ["uv", "run", "python", "main.py"]
 
   hostclient:
     build: ./client
@@ -25,10 +29,10 @@ services:
     restart: always
     volumes:
       - ./client/:/app
+      - /app/.venv
     ports:
       - "8501:8501"
-    command: >
-      streamlit run app.py
+    command: ["uv", "run", "streamlit", "run", "app.py"]
     depends_on:
       - mcpserver1
       - mcpserver2

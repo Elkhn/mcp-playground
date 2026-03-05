@@ -4,6 +4,13 @@ import uuid
 
 # Session state initialization
 def init_session():
+    # Initialize user_added_servers first if not exists
+    if "user_added_servers" not in st.session_state:
+        st.session_state["user_added_servers"] = {}
+
+    # Merge servers from config file and user-added servers
+    merged_servers = {**SERVER_CONFIG['mcpServers'], **st.session_state.get("user_added_servers", {})}
+
     defaults = {
         "params": {},
         "current_chat_id": None,
@@ -14,12 +21,16 @@ def init_session():
         "agent": None,
         "tools": [],
         "tool_executions": [],
-        "servers": SERVER_CONFIG['mcpServers']
+        "servers": merged_servers,
+        "config_file_servers": SERVER_CONFIG['mcpServers']  # Keep track of file-based servers
     }
-    
+
     for key, val in defaults.items():
         if key not in st.session_state:
             st.session_state[key] = val
+
+    # Always update servers with latest merge
+    st.session_state["servers"] = merged_servers
 
 
 def get_history():

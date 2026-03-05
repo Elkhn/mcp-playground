@@ -1,6 +1,7 @@
 import streamlit as st
 from config import MODEL_OPTIONS
 import traceback
+import json
 from services.mcp_service import connect_to_mcp_servers
 from services.chat_service import create_chat, delete_chat
 from utils.tool_schema_parser import extract_tool_parameters
@@ -70,7 +71,26 @@ def create_provider_select_widget():
     if selected_provider:
         params['model_id'] = selected_provider
         params['provider_index'] = list(MODEL_OPTIONS.keys()).index(selected_provider)
-        st.sidebar.success(f"Model: {MODEL_OPTIONS[selected_provider]}")
+
+        # Show default model and allow custom override
+        default_model = MODEL_OPTIONS[selected_provider]
+        st.sidebar.info(f"Default: {default_model}")
+
+        # Custom model input
+        custom_model = st.sidebar.text_input(
+            "🎯 Custom Model (optional)",
+            value=params.get('custom_model', ''),
+            placeholder=default_model,
+            help=f"Leave empty to use default: {default_model}",
+            key="custom_model_input"
+        )
+
+        # Store custom model if provided
+        if custom_model:
+            params['custom_model'] = custom_model
+            st.sidebar.success(f"✅ Using: {custom_model}")
+        else:
+            params['custom_model'] = None
 
     # Dynamic input fields based on provider
     with st.sidebar.container():
@@ -93,40 +113,158 @@ def create_advanced_configuration_widget():
                                     value=4096,
                                     step=512,)
         params['temperature'] = st.slider("Temperature", 0.0, 1.0, step=0.05, value=1.0)
-                
+
+def create_add_mcp_server_widget():
+    """Widget to dynamically add MCP servers"""
+    with st.sidebar.expander("➕ Add MCP Server", expanded=False):
+        st.markdown("Add a custom MCP server")
+
+        server_name = st.text_input(
+            "Server Name",
+            placeholder="MyServer",
+            help="Unique name for this server",
+            key="new_server_name"
+        )
+
+        server_url = st.text_input(
+            "Server URL",
+            placeholder="http://localhost:8002/sse",
+            help="Full URL to the MCP server endpoint",
+            key="new_server_url"
+        )
+
+        transport_type = st.selectbox(
+            "Transport Type",
+            options=["sse", "http"],
+            index=0,
+            help="Communication protocol",
+            key="new_server_transport"
+        )
+
+        timeout = st.number_input(
+            "Timeout (seconds)",
+            min_value=10,
+            max_value=3600,
+            value=600,
+            step=10,
+            key="new_server_timeout"
+        )
+
+        sse_timeout = st.number_input(
+            "SSE Read Timeout (seconds)",
+            min_value=10,
+            max_value=3600,
+            value=900,
+            step=10,
+            key="new_server_sse_timeout"
+        )
+
+        # Headers input (JSON format)
+        headers_json = st.text_area(
+            "Headers (JSON, optional)",
+            placeholder='{"Authorization": "Bearer token"}',
+            help="Optional headers in JSON format",
+            key="new_server_headers"
+        )
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+            if st.button("Add Server", use_container_width=True):
+                # Validate inputs
+                if not server_name or not server_url:
+                    st.error("Server name and URL are required!")
+                elif server_name in st.session_state.servers:
+                    st.error(f"Server '{server_name}' already exists!")
+                else:
+                    # Parse headers if provided
+                    headers = None
+                    if headers_json.strip():
+                        try:
+                            headers = json.loads(headers_json)
+                        except json.JSONDecodeError:
+                            st.error("Invalid JSON format for headers!")
+                            return
+
+                    # Create server config
+                    new_server = {
+                        "transport": transport_type,
+                        "url": server_url,
+                        "timeout": timeout,
+                        "sse_read_timeout": sse_timeout
+                    }
+
+                    if headers:
+                        new_server["headers"] = headers
+
+                    # Add to user_added_servers
+                    st.session_state.user_added_servers[server_name] = new_server
+
+                    # Update merged servers
+                    st.session_state.servers[server_name] = new_server
+
+                    st.success(f"✅ Added server: {server_name}")
+                    st.rerun()
+
+        with col2:
+            if st.button("Clear Form", use_container_width=True):
+                st.rerun()
+
 def create_mcp_connection_widget():
     with st.sidebar:
         st.subheader("Server Management")
-        with st.expander(f"MCP Servers ({len(st.session_state.servers)})"):
+
+        with st.expander(f"MCP Servers ({len(st.session_state.servers)})", expanded=True):
             for name, config in st.session_state.servers.items():
+                # Check if server is from config file or user-added
+                is_user_added = name in st.session_state.get("user_added_servers", {})
+                source_label = "📝 User Added" if is_user_added else "📄 From Config"
+
                 with st.container(border=True):
-                    st.markdown(f"**Server:** {name}")
+                    st.markdown(f"**{name}** {source_label}")
                     st.markdown(f"**URL:** {config['url']}")
-                    if st.button(f"Remove {name}", key=f"remove_{name}"):
-                        del st.session_state.servers[name]
-                        st.rerun()
+                    st.markdown(f"**Transport:** {config.get('transport', 'sse')}")
+
+                    # Only allow removal of user-added servers
+                    if is_user_added:
+                        if st.button(f"🗑️ Remove", key=f"remove_{name}", use_container_width=True):
+                            # Remove from user_added_servers
+                            del st.session_state.user_added_servers[name]
+                            # Remove from merged servers
+                            del st.session_state.servers[name]
+                            # Disconnect if connected
+                            if st.session_state.get("agent"):
+                                reset_connection_state()
+                            st.rerun()
+                    else:
+                        st.info("🔒 Config file servers cannot be removed from UI")
 
         if st.session_state.get("agent"):
             st.success(f"📶 Connected to {len(st.session_state.servers)} MCP servers!"
                        f" Found {len(st.session_state.tools)} tools.")
-            if st.button("Disconnect to MCP Servers"):
-                with st.spinner("Connecting to MCP servers..."):
+            if st.button("Disconnect from MCP Servers", use_container_width=True):
+                with st.spinner("Disconnecting from MCP servers..."):
                     try:
                         reset_connection_state()
                         st.rerun()
                     except Exception as e:
-                        st.error(f"Error disconnecting to MCP servers: {str(e)}")
+                        st.error(f"Error disconnecting from MCP servers: {str(e)}")
                         st.code(traceback.format_exc(), language="python")
         else:
-            st.warning("⚠️ Not connected to MCP server")
-            if st.button("Connect to MCP Servers"):
-                with st.spinner("Connecting to MCP servers..."):
-                    try:
-                        connect_to_mcp_servers()
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"Error connecting to MCP servers: {str(e)}")
-                        st.code(traceback.format_exc(), language="python")
+            # Check if there are any servers to connect to
+            if len(st.session_state.servers) == 0:
+                st.error("❌ Cannot connect: No MCP servers configured!")
+                st.info("💡 Add a server above or configure servers_config.json")
+            else:
+                st.warning("⚠️ Not connected to MCP servers")
+                if st.button("Connect to MCP Servers", use_container_width=True):
+                    with st.spinner("Connecting to MCP servers..."):
+                        try:
+                            connect_to_mcp_servers()
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Error connecting to MCP servers: {str(e)}")
+                            st.code(traceback.format_exc(), language="python")
 
 def create_mcp_tools_widget():
     with st.sidebar:

@@ -10,7 +10,7 @@ MODEL_OPTIONS = {
     'OpenAI': 'gpt-4o',
     'Antropic': 'claude-3-5-sonnet-20240620',
     'Google': 'gemini-2.0-flash-001',
-    'Bedrock': 'us.anthropic.claude-3-7-sonnet-20250219-v1:0',
+    'Bedrock': 'us.anthropic.claude-sonnet-4-5-20250929-v1:0',
     'Groq' : 'meta-llama/llama-4-scout-17b-16e-instruct'
     }
 
@@ -23,3 +23,6 @@ config_path = os.path.join('.', 'servers_config.json')
 if os.path.exists(config_path):
     with open(config_path, 'r') as f:
         SERVER_CONFIG = json.load(f)
+else:
+    # Default empty config if file doesn't exist
+    SERVER_CONFIG = {'mcpServers': {}}

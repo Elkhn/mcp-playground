@@ -1,0 +1,28 @@
+[project]
+name = "mcp_playground"
+version = "0.1.0"
+description = "Build MCP Playground (Streamlit Client)"
+requires-python = ">=3.12"
+dependencies = [
+    # Streamlit
+    "streamlit==1.44.0",
+
+    # AWS
+    "boto3>=1.35.0",
+
+    # Langchain + Langgraph
+    "langchain>=0.3.0",
+    "langgraph>=0.2.0",
+    "langchain-openai>=0.2.0",
+    "langchain-anthropic>=0.3.0",
+    "langchain-community>=0.3.0",
+    "langchain-mcp-adapters>=0.1.0",
+    "langchain-aws>=0.2.0",
+    "langchain-groq>=0.2.0",
+    "langchain-google-genai>=2.0.0",
+
+    # Utilities
+    "python-dotenv==1.1.0",
+    "nest-asyncio==1.6.0",
+]
+

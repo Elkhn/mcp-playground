@@ -1,9 +1,9 @@
 import requests
 from datetime import datetime, timedelta
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP
 import xml.etree.ElementTree as ET
 
-mcp = FastMCP("Currency Exchange", host="0.0.0.0", port=8001)
+mcp = FastMCP("Currency Exchange")
 
 CBAR_URL = "https://www.cbar.az/currencies"
 
@@ -102,6 +102,6 @@ async def convert_currency(amount: float, from_currency: str, to_currency: str, 
 
 
 if __name__ == "__main__":
-    print("Starting Weather Service MCP server on port 8001...")
+    print("Starting Currency Exchange MCP server on port 8001...")
     print("Connect to this server using http://localhost:8001/sse")
-    mcp.run(transport="sse")
+    mcp.run(transport="sse", host="0.0.0.0", port=8001)

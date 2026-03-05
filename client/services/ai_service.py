@@ -16,16 +16,20 @@ def create_llm_model(llm_provider: str, **kwargs):
     """Create a language model based on the selected provider."""
     params = st.session_state.get('params')
 
+    # Use custom model if provided, otherwise use default from MODEL_OPTIONS
+    def get_model(provider_key):
+        return params.get('custom_model') or MODEL_OPTIONS[provider_key]
+
     if llm_provider == "OpenAI":
         return ChatOpenAI(
             openai_api_key=params.get("api_key"),
-            model=MODEL_OPTIONS['OpenAI'],
+            model=get_model('OpenAI'),
             temperature=kwargs.get('temperature', 0.7),
         )
     elif llm_provider == "Antropic":
         return ChatAnthropic(
             anthropic_api_key=params.get("api_key"),
-            model=MODEL_OPTIONS['Antropic'],
+            model=get_model('Antropic'),
             temperature=kwargs.get('temperature', 0.7),
         )
     elif llm_provider == "Bedrock":
@@ -39,14 +43,14 @@ def create_llm_model(llm_provider: str, **kwargs):
         )
         return ChatBedrock(
             client=_bedrock,
-            model_id=MODEL_OPTIONS['Bedrock'],
+            model_id=get_model('Bedrock'),
             **kwargs
         )
 
     elif llm_provider == "Google":
         return ChatGoogleGenerativeAI(
             google_api_key=params.get("api_key"),
-            model=MODEL_OPTIONS['Google'],
+            model=get_model('Google'),
             temperature=kwargs.get('temperature', 0.7),
             max_tokens=kwargs.get('max_tokens', 4096),
             max_retries=2,
@@ -54,7 +58,7 @@ def create_llm_model(llm_provider: str, **kwargs):
     elif llm_provider == "Groq":
         return ChatGroq(
             api_key=params.get("api_key"),  # groq_api_key expected here
-            model=MODEL_OPTIONS['Groq'],
+            model=get_model('Groq'),
             temperature=kwargs.get("temperature", 0.7),
             streaming=kwargs.get("streaming", False)
         )

@@ -1,19 +1,19 @@
 import requests
 from datetime import datetime, timedelta
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP
 
 
-mcp = FastMCP("Weather Service", host="0.0.0.0", port=8000)
+mcp = FastMCP("Weather Service")
 
 @mcp.tool()
-async def get_current_weather(location: str) -> str:
+async def get_current_weather(location: str) -> dict:
     """Get the current weather for a location.
-    
+
     Args:
         location: The name of the city or location
 
     Returns:
-        A string describing the current weather conditions
+        A dictionary with weather information (temperature, description, humidity, wind_speed)
     """
     url = f"https://wttr.in/{location}?format=j1"  # JSON format
     try:
@@ -38,15 +38,15 @@ async def get_current_weather(location: str) -> str:
         return "Could not parse weather data."
 
 @mcp.tool()
-async def get_forecast(location: str, days: int = 3) -> str:
+async def get_forecast(location: str, days: int = 3) -> dict:
     """Get a weather forecast for a location.
-    
+
     Args:
         location: The name of the city or location
         days: Number of days to forecast (default: 3)
-    
+
     Returns:
-        A string describing the weather forecast
+        A dictionary with forecast information (date, temperature, description, humidity, wind_speed)
     """
     url = f"https://wttr.in/{location}?format=j1"
 
@@ -83,4 +83,4 @@ async def get_forecast(location: str, days: int = 3) -> str:
 if __name__ == "__main__":
     print("Starting Weather Service MCP server on port 8000...")
     print("Connect to this server using http://localhost:8000/sse")
-    mcp.run(transport="sse")
+    mcp.run(transport="sse", host="0.0.0.0", port=8000)

@@ -41,6 +41,7 @@ def main():
     sd_compents.create_sidebar_chat_buttons()
     sd_compents.create_provider_select_widget()
     sd_compents.create_advanced_configuration_widget()
+    sd_compents.create_add_mcp_server_widget()  # Add server form
     sd_compents.create_mcp_connection_widget()
     sd_compents.create_mcp_tools_widget()
 
@@ -108,7 +109,9 @@ def main():
                             elif hasattr(msg, 'name') and msg.name:  # ToolMessage
                                 tool_count += 1
                                 with messages_container.chat_message("assistant"):
-                                    tool_message = f"**ToolMessage - {tool_count} ({msg.name}):** \n" + msg.content
+                                    # Convert content to string if it's a list
+                                    content_str = str(msg.content) if isinstance(msg.content, list) else msg.content
+                                    tool_message = f"**ToolMessage - {tool_count} ({msg.name}):** \n" + content_str
                                     st.code(tool_message, language='yaml')
                                     _append_message_to_session({'role': 'assistant', 'tool': tool_message, })
                             else:  # AIMessage
